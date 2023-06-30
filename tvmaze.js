@@ -3,6 +3,7 @@
 const $showsList = $("#showsList");
 const $episodesArea = $("#episodesArea");
 const $searchForm = $("#searchForm");
+const $episodesList = $("#episodesList")
 
 
 /** Given a search term, search for tv shows that match that query.
@@ -78,16 +79,49 @@ $searchForm.on("submit", async function (evt) {
   await searchForShowAndDisplay();
 });
 
+$showsList.on("click", function(e) {
+  if (e.target.type === "submit") {
+    searchForEpisodesAndDisplay(e.target.parentElement.parentElement.parentElement.getAttribute("data-show-id"));
+  }
+})
 
 /** Given a show ID, get from API and return (promise) array of episodes:
  *      { id, name, season, number }
  */
 
 async function getEpisodesOfShow(id) {
-  const res = await axios.get(`http://api.tvmaze.com/shows/${id}/episodes`)
-  console.log(res)
+  const res = await axios.get(`http://api.tvmaze.com/shows/${id}/episodes`);
+  const episodes = [];
+  for (let pushEp of res.data) {
+    episodes.push(
+      {
+        id: pushEp.id,
+        name: pushEp.name,
+        season: pushEp.season,
+        number: pushEp.number
+      }
+    );
+  }
+  return episodes;
 }
 
 /** Write a clear docstring for this function... */
 
-// function populateEpisodes(episodes) { }
+function populateEpisodes(episodes) {
+  $episodesArea.show();
+  $episodesList.empty();
+
+  for (let episode of episodes) {
+    const $episode = $(
+      `<li data-episode-id=${episode.id}>
+        Season ${episode.season}, Episode ${episode.number}: ${episode.name}
+      </li>`);
+
+    $episodesList.append($episode);
+  }
+}
+
+
+async function searchForEpisodesAndDisplay(id) {
+  populateEpisodes(await getEpisodesOfShow(id));
+}
